@@ -1,14 +1,22 @@
-import './users/infrastructure/WebSocketServer';
-import { query } from './config/database';
-import { GetUsersService } from './users/application/GetUsersService';
-import { GetUsersController } from './users/infrastructure/GetUsersController';
+import { WebSocketServer } from 'ws';
+import { handleAuthMessages } from './admin/interfaces/auth_controller';
+import { handleEmployeeMessages } from './employees/interfaces/employee_controller';
+import dotenv from 'dotenv';
 
-const getUsersService = new GetUsersService();
-const getUsersController = new GetUsersController(getUsersService);
+dotenv.config();
 
-(async () => {
-  const result = await query('SELECT 1', []);
-  console.log('Test query result:', result);
-})();
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const wss = new WebSocketServer({ port });
 
-console.log(getUsersController.handleRequest());
+wss.on('connection', (ws) => {
+    ws.on('message', (message) => {
+        const data = JSON.parse(message);
+        if (data.action.startsWith('createEmployee') || data.action.startsWith('deleteEmployee')) {
+            handleEmployeeMessages(message, ws);
+        } else {
+            handleAuthMessages(message, ws);
+        }
+    });
+});
+
+console.log(`WebSocket server is running on port ${port}`);
