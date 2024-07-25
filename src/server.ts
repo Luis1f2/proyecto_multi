@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import mqttClient from './mqttClient'; // Importa el cliente MQTT
+import mqttClient from './mqttClient';
 import dotenv from 'dotenv';
 import { handleAdminMessages } from './admin/interfaces/admin_controller';
 import { handleEmployeeMessages } from './employees/interfaces/employee_controller';
@@ -14,17 +14,17 @@ wss.on('connection', (ws: WebSocket) => {
     const data = JSON.parse(message);
 
     if (data.action === 'publishMessage') {
-      mqttClient.publish(data.topic, data.message, (err) => {
-        if (err) {
-          ws.send(JSON.stringify({ action: 'publishMessage', status: 'error', message: err.message }));
+      mqttClient.publish(data.topic, data.message, (error) => {
+        if (error) {
+          ws.send(JSON.stringify({ action: 'publishMessage', status: 'error', message: error.message }));
         } else {
           ws.send(JSON.stringify({ action: 'publishMessage', status: 'success' }));
         }
       });
     } else if (data.action === 'subscribeTopic') {
-      mqttClient.subscribe(data.topic, (err) => {
-        if (err) {
-          ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'error', message: err.message }));
+      mqttClient.subscribe(data.topic, (error) => {
+        if (error) {
+          ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'error', message: error.message }));
         } else {
           ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'success' }));
         }
