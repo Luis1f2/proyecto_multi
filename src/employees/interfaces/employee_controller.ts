@@ -1,77 +1,55 @@
+import { WebSocket } from 'ws';
 import { EmployeeService } from '../application/employee_service';
 import { SqlEmployeeRepository } from '../infrastructure/sql/sql_employee_repository';
+import mqttClient from '../../mqttclient';
 
 const employeeRepository = new SqlEmployeeRepository();
 const employeeService = new EmployeeService(employeeRepository);
 
-export const handleEmployeeMessages = async (message: any, ws: any) => {
-    const data = JSON.parse(message);
+export const handleEmployeeMessages = async (message: string, ws: WebSocket) => {
+  const data = JSON.parse(message);
 
-    switch (data.action) {
-        case 'createEmployee':
-            await handleCreateEmployee(data.payload, ws);
-            break;
-        case 'deleteEmployee':
-            await handleDeleteEmployee(data.payload, ws);
-            break;
-        case 'getEmployeeById':
-            await handleGetEmployeeById(data.payload, ws);
-            break;
-        case 'getAllEmployees':
-            await handleGetAllEmployees(ws);
-            break;
-        default:
-            ws.send(JSON.stringify({ status: 'error', message: 'Acción no reconocida' }));
-            break;
-    }
-};
-
-const handleCreateEmployee = async (payload: any, ws: any) => {
+  if (data.action === 'employeeCreate') {
     try {
-        const employee = await employeeService.createEmployee(payload);
-        ws.send(JSON.stringify({ action: 'createEmployee', status: 'success', employee }));
+      const { name, lastName, idCard, section } = data.payload;
+      const employee = await employeeService.createEmployee({ name, lastName, idCard, section });
+      ws.send(JSON.stringify({ action: 'employeeCreate', employee }));
     } catch (error) {
-        handleError(error, 'createEmployee', ws);
+      ws.send(JSON.stringify({ action: 'employeeCreate', error: 'Error creating employee' }));
+      console.error('Error creating employee:', error);
     }
-};
-
-const handleDeleteEmployee = async (payload: any, ws: any) => {
+  } else if (data.action === 'employeeGetByIdCard') {
     try {
-        const { employeeId } = payload;
-        await employeeService.deleteEmployee(parseInt(employeeId, 10));
-        ws.send(JSON.stringify({ action: 'deleteEmployee', status: 'success', employeeId }));
+      const { idCard } = data.payload;
+      const employee = await employeeService.getEmployeeByIdCard(idCard);
+      if (employee) {
+        ws.send(JSON.stringify({ action: 'employeeGetByIdCard', employee }));
+      } else {
+        ws.send(JSON.stringify({ action: 'employeeGetByIdCard', error: 'Employee not found' }));
+      }
     } catch (error) {
-        handleError(error, 'deleteEmployee', ws);
+      ws.send(JSON.stringify({ action: 'employeeGetByIdCard', error: 'Error fetching employee' }));
+      console.error('Error fetching employee:', error);
     }
-};
-
-const handleGetEmployeeById = async (payload: any, ws: any) => {
+  } else if (data.action === 'employeeDelete') {
     try {
-        const { id } = payload;
-        const employee = await employeeService.getEmployeeById(parseInt(id, 10));
-        if (employee) {
-            ws.send(JSON.stringify({ action: 'getEmployeeById', status: 'success', employee }));
-        } else {
-            ws.send(JSON.stringify({ action: 'getEmployeeById', status: 'error', message: 'Empleado no encontrado' }));
-        }
+      const { employeeId } = data.payload;
+      await employeeService.deleteEmployee(employeeId);
+      ws.send(JSON.stringify({ action: 'employeeDelete', employeeId }));
     } catch (error) {
-        handleError(error, 'getEmployeeById', ws);
+      ws.send(JSON.stringify({ action: 'employeeDelete', error: 'Error deleting employee' }));
+      console.error('Error deleting employee:', error);
     }
-};
-
-const handleGetAllEmployees = async (ws: any) => {
+  } else if (data.action === 'employeeUpdate') {
     try {
-        const employees = await employeeService.getAllEmployees();
-        ws.send(JSON.stringify({ action: 'getAllEmployees', status: 'success', employees }));
+      const { id, name, lastName, idCard, section } = data.payload;
+      const employee = await employeeService.updateEmployee({ id, name, lastName, idCard, section });
+      ws.send(JSON.stringify({ action: 'employeeUpdate', employee }));
     } catch (error) {
-        handleError(error, 'getAllEmployees', ws);
+      ws.send(JSON.stringify({ action: 'employeeUpdate', error: 'Error updating employee' }));
+      console.error('Error updating employee:', error);
     }
-};
-
-const handleError = (error: unknown, action: string, ws: any) => {
-    if (error instanceof Error) {
-        ws.send(JSON.stringify({ action, status: 'error', message: error.message }));
-    } else {
-        ws.send(JSON.stringify({ action, status: 'error', message: 'Unknown error' }));
-    }
+  } else {
+    ws.send(JSON.stringify({ status: 'error', message: 'Acción no reconocida' }));
+  }
 };

@@ -13,6 +13,7 @@
   "description": "",
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
+    "@types/mqtt": "^2.5.0",
     "@types/mysql": "^2.15.26",
     "@types/node": "^20.14.12",
     "@types/signale": "^1.4.7",
@@ -28,6 +29,7 @@
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "jsonwebtoken": "^9.0.2",
+    "mqtt": "^5.8.1",
     "mysql2": "^3.10.2",
     "signale": "^1.4.0",
     "uuid": "^10.0.0",
