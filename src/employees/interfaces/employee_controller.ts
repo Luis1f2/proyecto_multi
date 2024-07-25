@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { EmployeeService } from '../application/employee_service';
 import { SqlEmployeeRepository } from '../infrastructure/sql/sql_employee_repository';
-import mqttClient from '../../mqttclient';
+import mqttClient from '../../mqttClient';
 
 const employeeRepository = new SqlEmployeeRepository();
 const employeeService = new EmployeeService(employeeRepository);

@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import mqttClient from './mqttclient';
+import mqttClient from './mqttClient'; // Importa el cliente MQTT
 import dotenv from 'dotenv';
 import { handleAdminMessages } from './admin/interfaces/admin_controller';
 import { handleEmployeeMessages } from './employees/interfaces/employee_controller';
@@ -39,4 +39,4 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
-console.log(`WebSocket server is running on port ${port}`);
+console.log(`WebSocket corriendo en ws://localhost:${port}`);

@@ -1,10 +1,23 @@
 import mqtt from 'mqtt';
 import { processAccessRequest } from './employees/services/processAccessRequest';
+import * as fs from 'fs';
 
-const client = mqtt.connect('mqtt://localhost:1883'); // Reemplaza con la URL de tu broker MQTT
+const KEY = fs.readFileSync('path/to/your/private-key.pem.key');
+const CERT = fs.readFileSync('path/to/your/certificate.pem.crt');
+const CA = fs.readFileSync('path/to/your/AmazonRootCA1.pem');
+
+const client = mqtt.connect({
+  host: 'your-aws-endpoint.amazonaws.com',
+  port: 8883,
+  protocol: 'mqtts',
+  key: KEY,
+  cert: CERT,
+  ca: CA,
+  clientId: 'your-client-id',
+});
 
 client.on('connect', () => {
-  console.log('Conectado al broker MQTT');
+  console.log('Conectado al broker MQTT de AWS');
   client.subscribe('esp32/access', (err) => {
     if (!err) {
       console.log('Suscrito al tema esp32/access');
