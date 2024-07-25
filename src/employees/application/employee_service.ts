@@ -12,4 +12,12 @@ export class EmployeeService {
     async deleteEmployee(employeeId: number): Promise<void> {
         await this.employeeRepository.delete(employeeId);
     }
+
+    async getEmployeeById(employeeId: number): Promise<Employee | null> {
+        return await this.employeeRepository.findById(employeeId);
+    }
+
+    async getAllEmployees(): Promise<Employee[]> {
+        return await this.employeeRepository.findAll();
+    }
 }

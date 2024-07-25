@@ -26,4 +26,28 @@ export class SqlEmployeeRepository implements EmployeeRepository {
         const sql = 'DELETE FROM employees WHERE id = ?';
         await query(sql, [employeeId]);
     }
+
+    async findById(employeeId: number): Promise<Employee | null> {
+        const sql = 'SELECT * FROM employees WHERE id = ?';
+        const result = await query(sql, [employeeId]);
+        
+        if (result) {
+            const [rows] = result;
+            if ((rows as any[]).length > 0) {
+                return new Employee((rows as any[])[0]);
+            }
+        }
+        return null;
+    }
+
+    async findAll(): Promise<Employee[]> {
+        const sql = 'SELECT * FROM employees';
+        const result = await query(sql, []);
+        
+        if (result) {
+            const [rows] = result;
+            return (rows as any[]).map(row => new Employee(row));
+        }
+        return [];
+    }
 }
