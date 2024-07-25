@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.ts",
+    "dev": "tsnd --respawn --clear src/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -12,11 +14,13 @@
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
     "@types/mysql": "^2.15.26",
-    "@types/node": "^20.14.10",
+    "@types/node": "^20.14.12",
     "@types/signale": "^1.4.7",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.10",
-    "typescript": "^5.5.3"
+    "nodemon": "^3.1.4",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4"
   },
   "dependencies": {
     "@types/bcrypt": "^5.0.2",
