@@ -1,10 +1,11 @@
 import mqtt from 'mqtt';
 import { processAccessRequest } from './employees/services/processAccessRequest';
 import * as fs from 'fs';
+import * as path from 'path';
 
-const KEY = fs.readFileSync('path/to/your/private-key.pem.key');
-const CERT = fs.readFileSync('path/to/your/certificate.pem.crt');
-const CA = fs.readFileSync('path/to/your/AmazonRootCA1.pem');
+const KEY = fs.readFileSync(path.resolve(__dirname, '../certs/private-key.pem.key'));
+const CERT = fs.readFileSync(path.resolve(__dirname, '../certs/certificate.pem.crt'));
+const CA = fs.readFileSync(path.resolve(__dirname, '../certs/AmazonRootCA1.pem'));
 
 const client = mqtt.connect({
   host: 'your-aws-endpoint.amazonaws.com',
