@@ -1,6 +1,7 @@
 import { EmployeeService } from '../application/employee_service';
 import { SqlEmployeeRepository } from '../infrastructure/sql/sql_employee_repository';
 import { writeFileSync } from 'fs';
+import * as path from 'path';
 
 const employeeRepository = new SqlEmployeeRepository();
 const employeeService = new EmployeeService(employeeRepository);
@@ -10,8 +11,8 @@ export const processAccessRequest = async (data: any) => {
   const employee = await employeeService.getEmployeeByIdCard(idCard);
 
   if (employee) {
-    const timestamp = new Date().toISOString();
-    const imagePath = `./uploads/${idCard}_${timestamp}.jpg`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Reemplazar ':' y '.' para evitar problemas en la ruta del archivo
+    const imagePath = path.resolve(__dirname, `../../uploads/${idCard}_${timestamp}.jpg`);
 
     // Guardar la imagen
     const base64Data = image.replace(/^data:image\/jpeg;base64,/, "");

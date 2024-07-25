@@ -3,12 +3,15 @@ import { processAccessRequest } from './employees/services/processAccessRequest'
 import * as fs from 'fs';
 import * as path from 'path';
 
-const KEY = fs.readFileSync(path.resolve(__dirname, '../certs/private-key.pem.key'));
-const CERT = fs.readFileSync(path.resolve(__dirname, '../certs/certificate.pem.crt'));
-const CA = fs.readFileSync(path.resolve(__dirname, '../certs/AmazonRootCA1.pem'));
+const KEY = fs.readFileSync(path.resolve(__dirname, './certs/c02923a325d8d6380c88727e12e42bd1481bf5d1e6a919ff4013140dc75d14d4-private.pem.key'));
+const CERT = fs.readFileSync(path.resolve(__dirname, './certs/c02923a325d8d6380c88727e12e42bd1481bf5d1e6a919ff4013140dc75d14d4-certificate.pem.crt'));
+const CA = [
+  fs.readFileSync(path.resolve(__dirname, './certs/AmazonRootCA1.pem')),
+  fs.readFileSync(path.resolve(__dirname, './certs/AmazonRootCA3.pem'))
+];
 
 const client = mqtt.connect({
-  host: 'your-aws-endpoint.amazonaws.com',
+  host: 'adloleqgmsew0-ats.iot.us-east-1.amazonaws.com',
   port: 8883,
   protocol: 'mqtts',
   key: KEY,
