@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { EmployeeService } from '../application/employee_service';
 import { SqlEmployeeRepository } from '../infrastructure/sql/sql_employee_repository';
-import mqttClient from '../../mqttClient';
+import { processAccessRequest } from '../services/processAccessRequest';
 
 const employeeRepository = new SqlEmployeeRepository();
 const employeeService = new EmployeeService(employeeRepository);
@@ -12,8 +12,12 @@ export const handleEmployeeMessages = async (message: string, ws: WebSocket) => 
   if (data.action === 'employeeCreate') {
     try {
       const { name, lastName, idCard, section } = data.payload;
-      const employee = await employeeService.createEmployee({ name, lastName, idCard, section });
-      ws.send(JSON.stringify({ action: 'employeeCreate', employee }));
+      const result = await employeeService.createEmployee({ name, lastName, idCard, section });
+      if (typeof result === 'string') {
+        ws.send(JSON.stringify({ action: 'employeeCreate', error: result }));
+      } else {
+        ws.send(JSON.stringify({ action: 'employeeCreate', employee: result }));
+      }
     } catch (error) {
       ws.send(JSON.stringify({ action: 'employeeCreate', error: 'Error creating employee' }));
       console.error('Error creating employee:', error);

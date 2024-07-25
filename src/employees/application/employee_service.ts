@@ -5,7 +5,13 @@ import { query } from '../../database/mysql';
 export class EmployeeService {
   constructor(private employeeRepository: EmployeeRepository) {}
 
-  async createEmployee(employeeData: any): Promise<Employee> {
+  async createEmployee(employeeData: any): Promise<Employee | string> {
+    // Verificar si el idCard ya existe
+    const existingEmployee = await this.employeeRepository.findByIdCard(employeeData.idCard);
+    if (existingEmployee) {
+      return 'Duplicate entry for idCard';
+    }
+
     const employee = new Employee(employeeData);
     return await this.employeeRepository.save(employee);
   }
@@ -28,3 +34,4 @@ export class EmployeeService {
     await query(sql, [employeeId, timestamp, imagePath, action]);
   }
 }
+
