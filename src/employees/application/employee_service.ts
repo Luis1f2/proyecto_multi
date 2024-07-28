@@ -31,7 +31,38 @@ export class EmployeeService {
 
   async saveHistory(employeeId: number, timestamp: string, imagePath: string, action: 'entry' | 'exit'): Promise<void> {
     const sql = 'INSERT INTO employee_history (employee_id, timestamp, image_path, action) VALUES (?, ?, ?, ?)';
-    await query(sql, [employeeId, timestamp, imagePath, action]);
+    try {
+      await query(sql, [employeeId, timestamp, imagePath, action]);
+    } catch (error) {
+      throw new Error('Error saving history');
+    }
+  }
+
+  async getEmployeeHistory(employeeId: number): Promise<any[]> {
+    const sql = 'SELECT * FROM employee_history WHERE employee_id = ? ORDER BY timestamp DESC';
+    try {
+      const result: any = await query(sql, [employeeId]);
+      if (result) {
+        const [rows] = result;
+        return rows;
+      }
+    } catch (error) {
+      throw new Error('Error fetching employee history');
+    }
+    return [];
+  }
+
+  async getAllEmployeesHistory(): Promise<any[]> {
+    const sql = 'SELECT * FROM employee_history ORDER BY timestamp DESC';
+    try {
+      const result: any = await query(sql, []);
+      if (result) {
+        const [rows] = result;
+        return rows;
+      }
+    } catch (error) {
+      throw new Error('Error fetching all employees history');
+    }
+    return [];
   }
 }
-

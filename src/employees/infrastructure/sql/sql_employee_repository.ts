@@ -6,7 +6,7 @@ import { ResultSetHeader } from 'mysql2';
 export class SqlEmployeeRepository implements EmployeeRepository {
   async save(employee: Employee): Promise<Employee> {
     const sql = 'INSERT INTO employees (name, lastName, idCard, section) VALUES (?, ?, ?, ?)';
-    const result = await query(sql, [employee.name, employee.lastName, employee.idCard, employee.section]);
+    const result: any = await query(sql, [employee.name, employee.lastName, employee.idCard, employee.section]);
 
     if (result) {
       const [rows] = result;
@@ -24,7 +24,7 @@ export class SqlEmployeeRepository implements EmployeeRepository {
 
   async findById(employeeId: number): Promise<Employee | null> {
     const sql = 'SELECT * FROM employees WHERE id = ?';
-    const result = await query(sql, [employeeId]);
+    const result: any = await query(sql, [employeeId]);
 
     if (result) {
       const [rows] = result;
@@ -37,7 +37,7 @@ export class SqlEmployeeRepository implements EmployeeRepository {
 
   async findByIdCard(idCard: string): Promise<Employee | null> {
     const sql = 'SELECT * FROM employees WHERE idCard = ?';
-    const result = await query(sql, [idCard]);
+    const result: any = await query(sql, [idCard]);
 
     if (result) {
       const [rows] = result;
@@ -57,5 +57,27 @@ export class SqlEmployeeRepository implements EmployeeRepository {
   async delete(employeeId: number): Promise<void> {
     const sql = 'DELETE FROM employees WHERE id = ?';
     await query(sql, [employeeId]);
+  }
+
+  async getEmployeeHistory(employeeId: number): Promise<any[]> {
+    const sql = 'SELECT * FROM employee_history WHERE employee_id = ? ORDER BY timestamp DESC';
+    const result: any = await query(sql, [employeeId]);
+
+    if (result) {
+      const [rows] = result;
+      return rows;
+    }
+    return [];
+  }
+
+  async getAllEmployeesHistory(): Promise<any[]> {
+    const sql = 'SELECT * FROM employee_history ORDER BY timestamp DESC';
+    const result: any = await query(sql, []);
+
+    if (result) {
+      const [rows] = result;
+      return rows;
+    }
+    return [];
   }
 }

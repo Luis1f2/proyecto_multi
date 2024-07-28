@@ -1,7 +1,6 @@
 import { WebSocket } from 'ws';
 import { EmployeeService } from '../application/employee_service';
 import { SqlEmployeeRepository } from '../infrastructure/sql/sql_employee_repository';
-import { processAccessRequest } from '../services/processAccessRequest';
 
 const employeeRepository = new SqlEmployeeRepository();
 const employeeService = new EmployeeService(employeeRepository);
@@ -52,6 +51,31 @@ export const handleEmployeeMessages = async (message: string, ws: WebSocket) => 
     } catch (error) {
       ws.send(JSON.stringify({ action: 'employeeUpdate', error: 'Error updating employee' }));
       console.error('Error updating employee:', error);
+    }
+  } else if (data.action === 'getEmployeeHistory') {
+    try {
+      const { employeeId } = data.payload;
+      const history = await employeeService.getEmployeeHistory(employeeId);
+      if (history.length > 0) {
+        ws.send(JSON.stringify({ action: 'getEmployeeHistory', history }));
+      } else {
+        ws.send(JSON.stringify({ action: 'getEmployeeHistory', message: 'No history found for this employee' }));
+      }
+    } catch (error) {
+      ws.send(JSON.stringify({ action: 'getEmployeeHistory', error: 'Error fetching employee history' }));
+      console.error('Error fetching employee history:', error);
+    }
+  } else if (data.action === 'getAllEmployeesHistory') {
+    try {
+      const history = await employeeService.getAllEmployeesHistory();
+      if (history.length > 0) {
+        ws.send(JSON.stringify({ action: 'getAllEmployeesHistory', history }));
+      } else {
+        ws.send(JSON.stringify({ action: 'getAllEmployeesHistory', message: 'No history found' }));
+      }
+    } catch (error) {
+      ws.send(JSON.stringify({ action: 'getAllEmployeesHistory', error: 'Error fetching all employees history' }));
+      console.error('Error fetching all employees history:', error);
     }
   } else {
     ws.send(JSON.stringify({ status: 'error', message: 'Acción no reconocida' }));

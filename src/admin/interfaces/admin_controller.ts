@@ -38,10 +38,10 @@ export const handleAdminMessages = async (message: string, ws: WebSocket) => {
       if (admin) {
         ws.send(JSON.stringify({ action: 'getAdminByEmail', admin }));
       } else {
-        ws.send(JSON.stringify({ action: 'getAdminByEmail', error: 'Admin not found' }));
+        ws.send(JSON.stringify({ action: 'getAdminByEmail', error: 'Admin no existe' }));
       }
     } catch (error) {
-      ws.send(JSON.stringify({ action: 'getAdminByEmail', error: 'Error fetching admin' }));
+      ws.send(JSON.stringify({ action: 'getAdminByEmail', error: 'Error de busqueda' }));
       console.error('Error fetching admin:', error);
     }
   } else {
