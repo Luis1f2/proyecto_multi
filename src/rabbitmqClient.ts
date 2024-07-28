@@ -1,6 +1,6 @@
 import amqp from 'amqplib';
 
-const RABBITMQ_URL = 'amqp://guest:guest@34.228.216.244:5672';
+const RABBITMQ_URL = 'amqp://guest:guest@3.92.131.250:5672';
 
 let channel: amqp.Channel;
 
