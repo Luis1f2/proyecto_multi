@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { handleAdminMessages } from './admin/interfaces/admin_controller';
 import { handleEmployeeMessages } from './employees/interfaces/employee_controller';
 import { Channel, ConsumeMessage } from 'amqplib';
+import { processAccessRequest } from './employees/services/processAccessRequest';
 
 dotenv.config();
 
@@ -12,6 +13,17 @@ const wss = new WebSocketServer({ port });
 
 connectRabbitMQ().then(() => {
   console.log('RabbitMQ connection established');
+
+  const channel = getChannel();
+  if (channel) {
+    channel.consume('esp32/access', async (msg: ConsumeMessage | null) => {
+      if (msg) {
+        const data = JSON.parse(msg.content.toString());
+        await processAccessRequest(data);
+        channel.ack(msg);
+      }
+    });
+  }
 
   wss.on('connection', (ws: WebSocket) => {
     ws.on('message', async (message: string) => {
@@ -29,7 +41,7 @@ connectRabbitMQ().then(() => {
           channel.sendToQueue(data.topic, Buffer.from(data.message));
           ws.send(JSON.stringify({ action: 'publishMessage', status: 'success' }));
         } catch (error) {
-          const err = error as Error;  // Aseguramos que error sea del tipo Error
+          const err = error as Error;
           ws.send(JSON.stringify({ action: 'publishMessage', status: 'error', message: err.message }));
         }
       } else if (data.action === 'subscribeTopic') {
@@ -43,7 +55,7 @@ connectRabbitMQ().then(() => {
           });
           ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'success' }));
         } catch (error) {
-          const err = error as Error;  // Aseguramos que error sea del tipo Error
+          const err = error as Error;
           ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'error', message: err.message }));
         }
       } else if (data.action.startsWith('admin')) {
