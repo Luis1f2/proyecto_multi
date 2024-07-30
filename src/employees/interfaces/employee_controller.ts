@@ -77,6 +77,15 @@ export const handleEmployeeMessages = async (message: string, ws: WebSocket) => 
       ws.send(JSON.stringify({ action: 'getAllEmployeesHistory', error: 'Error fetching all employees history' }));
       console.error('Error fetching all employees history:', error);
     }
+  } else if (data.action === 'validateAccessKey') {
+    try {
+      const { idCard, accessKey } = data.payload;
+      const isValid = await employeeService.validateAccessKey(idCard, accessKey);
+      ws.send(JSON.stringify({ action: 'validateAccessKey', isValid }));
+    } catch (error) {
+      ws.send(JSON.stringify({ action: 'validateAccessKey', error: 'Error validating access key' }));
+      console.error('Error validating access key:', error);
+    }
   } else {
     ws.send(JSON.stringify({ status: 'error', message: 'Acción no reconocida' }));
   }

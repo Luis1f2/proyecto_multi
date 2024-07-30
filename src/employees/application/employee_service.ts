@@ -6,10 +6,14 @@ export class EmployeeService {
   constructor(private employeeRepository: EmployeeRepository) {}
 
   async createEmployee(employeeData: any): Promise<Employee | string> {
-    // Verificar si el idCard ya existe
     const existingEmployee = await this.employeeRepository.findByIdCard(employeeData.idCard);
     if (existingEmployee) {
       return 'Duplicate entry for idCard';
+    }
+
+    // Asegurarse de que accessKey esté siempre presente
+    if (!employeeData.accessKey) {
+      return 'Missing access key';
     }
 
     const employee = new Employee(employeeData);
@@ -29,10 +33,10 @@ export class EmployeeService {
     await this.employeeRepository.delete(employeeId);
   }
 
-  async saveHistory(employeeId: number, timestamp: string, imagePath: string, action: 'entry' | 'exit'): Promise<void> {
-    const sql = 'INSERT INTO employee_history (employee_id, timestamp, image_path, action) VALUES (?, ?, ?, ?)';
+  async saveHistory(employeeId: number, timestamp: string, action: 'entry' | 'exit'): Promise<void> {
+    const sql = 'INSERT INTO employee_history (employee_id, timestamp, action) VALUES (?, ?, ?)';
     try {
-      await query(sql, [employeeId, timestamp, imagePath, action]);
+      await query(sql, [employeeId, timestamp, action]);
     } catch (error) {
       throw new Error('Error saving history');
     }
@@ -64,5 +68,13 @@ export class EmployeeService {
       throw new Error('Error fetching all employees history');
     }
     return [];
+  }
+
+  async validateAccessKey(idCard: string, accessKey: string): Promise<boolean> {
+    const employee = await this.getEmployeeByIdCard(idCard);
+    if (employee && employee.accessKey === accessKey) {
+      return true;
+    }
+    return false;
   }
 }

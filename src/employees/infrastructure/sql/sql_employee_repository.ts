@@ -5,8 +5,8 @@ import { ResultSetHeader } from 'mysql2';
 
 export class SqlEmployeeRepository implements EmployeeRepository {
   async save(employee: Employee): Promise<Employee> {
-    const sql = 'INSERT INTO employees (name, lastName, idCard, section) VALUES (?, ?, ?, ?)';
-    const result: any = await query(sql, [employee.name, employee.lastName, employee.idCard, employee.section]);
+    const sql = 'INSERT INTO employees (name, lastName, idCard, section, accessKey) VALUES (?, ?, ?, ?, ?)';
+    const result: any = await query(sql, [employee.name, employee.lastName, employee.idCard, employee.section, employee.accessKey]);
 
     if (result) {
       const [rows] = result;
@@ -49,8 +49,8 @@ export class SqlEmployeeRepository implements EmployeeRepository {
   }
 
   async update(employee: Employee): Promise<Employee> {
-    const sql = 'UPDATE employees SET name = ?, lastName = ?, idCard = ?, section = ? WHERE id = ?';
-    await query(sql, [employee.name, employee.lastName, employee.idCard, employee.section, employee.id]);
+    const sql = 'UPDATE employees SET name = ?, lastName = ?, idCard = ?, section = ?, accessKey = ? WHERE id = ?';
+    await query(sql, [employee.name, employee.lastName, employee.idCard, employee.section, employee.accessKey, employee.id]);
     return employee;
   }
 
@@ -79,5 +79,18 @@ export class SqlEmployeeRepository implements EmployeeRepository {
       return rows;
     }
     return [];
+  }
+
+  async findByAccessKey(accessKey: string): Promise<Employee | null> {
+    const sql = 'SELECT * FROM employees WHERE accessKey = ?';
+    const result: any = await query(sql, [accessKey]);
+
+    if (result) {
+      const [rows] = result;
+      if (Array.isArray(rows) && rows.length > 0) {
+        return new Employee(rows[0]);
+      }
+    }
+    return null;
   }
 }
