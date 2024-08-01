@@ -5,23 +5,34 @@ const employeeRepository = new SqlEmployeeRepository();
 const employeeService = new EmployeeService(employeeRepository);
 
 export const processAccessRequest = async (data: any) => {
-  const { idCard, action, accessKey } = data; // Asegúrate de que `action` es 'entry' o 'exit'
-  const employee = await employeeService.getEmployeeByIdCard(idCard);
+  try {
+    const { idCard, action, accessKey } = data;
 
-  if (employee) {
-    // Validar la clave de acceso si se proporciona
-    if (accessKey && !(await employeeService.validateAccessKey(idCard, accessKey))) {
-      console.log('Acceso denegado: Clave de acceso no válida');
-      return;
+    
+    if (!idCard || !accessKey || !action) {
+      console.log('Error: Faltan campos necesarios en la solicitud.');
+      return; 
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Reemplazar ':' y '.' para evitar problemas en la ruta del archivo
+    const employee = await employeeService.getEmployeeByIdCard(idCard);
 
-    // Registrar la entrada/salida
-    await employeeService.saveHistory(employee.id, timestamp, action);
+    if (employee) {
+      
+      const isValidAccessKey = await employeeService.validateAccessKey(idCard, accessKey);
+      if (!isValidAccessKey) {
+        console.log('Acceso denegado: Clave de acceso no válida');
+        return; 
+      }
 
-    console.log(`Acceso ${action === 'entry' ? 'concedido' : 'registrado'} a ${employee.name}`);
-  } else {
-    console.log('Acceso denegado: ID de tarjeta no válido');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); 
+
+      
+      await employeeService.saveHistory(employee.id, timestamp, action);
+      console.log(`Acceso ${action === 'entry' ? 'concedido' : 'registrado'} a ${employee.name}`);
+    } else {
+      console.log('Acceso denegado: ID de tarjeta no válido');
+    }
+  } catch (error) {
+    console.error('Error al procesar la solicitud de acceso:', error);
   }
 };

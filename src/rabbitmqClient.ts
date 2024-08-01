@@ -2,16 +2,19 @@ import amqp from 'amqplib';
 import { processAccessRequest } from './employees/services/processAccessRequest';
 
 const RABBITMQ_URL = 'amqp://guest:guest@3.92.131.250:5672';
+const QUEUE_NAME = 'esp32/access';
+const TOPIC_KEY = 'esp32Cam.mqtt';
 
-let channel: amqp.Channel;
+let channel: amqp.Channel | null = null; // Inicializar como null para indicar que puede estar no inicializado
 
 const connectRabbitMQ = async () => {
     try {
         const connection = await amqp.connect(RABBITMQ_URL);
         channel = await connection.createChannel();
-        await channel.assertQueue('esp32/access', { durable: true });
-        console.log('Connected to RabbitMQ');
-        listenForMessages();  // Start listening for messages
+        await channel.assertQueue(QUEUE_NAME, { durable: true });
+        await channel.bindQueue(QUEUE_NAME, 'amq.topic', TOPIC_KEY); 
+        console.log('Connected to RabbitMQ and queue bound to topic');
+        listenForMessages();  
     } catch (error) {
         console.error('Failed to connect to RabbitMQ', error);
     }
@@ -23,15 +26,15 @@ const listenForMessages = () => {
         return;
     }
 
-    channel.consume('esp32/access', async (msg) => {
+    channel.consume(QUEUE_NAME, async (msg) => {
         if (msg !== null) {
             const messageContent = msg.content.toString();
             console.log('Received message:', messageContent);
 
-            // Assuming the messageContent is a JSON string with idCard and imagePath
+           
             try {
                 const data = JSON.parse(messageContent);
-                if (data.idCard && data.imagePath && data.action) {
+                if (data.idCard && data.action) {
                     await processAccessRequest(data);
                 } else {
                     console.log('Invalid message format');
@@ -40,7 +43,7 @@ const listenForMessages = () => {
                 console.error('Failed to process message:', error);
             }
 
-            channel.ack(msg);
+            channel?.ack(msg); 
         }
     }, { noAck: false });
 };
@@ -49,5 +52,4 @@ const getChannel = () => channel;
 
 export { connectRabbitMQ, getChannel };
 
-// Call connectRabbitMQ to establish the connection
 connectRabbitMQ();

@@ -11,7 +11,6 @@ export class EmployeeService {
       return 'Duplicate entry for idCard';
     }
 
-    // Asegurarse de que accessKey esté siempre presente
     if (!employeeData.accessKey) {
       return 'Missing access key';
     }

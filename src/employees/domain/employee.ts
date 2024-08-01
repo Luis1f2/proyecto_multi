@@ -4,7 +4,7 @@ export class Employee {
   public lastName: string;
   public idCard: string;
   public section: string;
-  public accessKey: string; // Nueva propiedad para la clave de acceso
+  public accessKey: string; 
 
   constructor(employeeData: any) {
       this.id = employeeData.id;
@@ -12,6 +12,6 @@ export class Employee {
       this.lastName = employeeData.lastName;
       this.idCard = employeeData.idCard;
       this.section = employeeData.section;
-      this.accessKey = employeeData.accessKey; // Asignar la clave de acceso
+      this.accessKey = employeeData.accessKey; 
   }
 }
