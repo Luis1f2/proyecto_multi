@@ -11,64 +11,128 @@ dotenv.config();
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
 const wss = new WebSocketServer({ port });
 
-connectRabbitMQ().then(() => {
-  console.log('RabbitMQ connection established');
-
-  const channel = getChannel();
-  if (channel) {
-    channel.consume('esp32/access', async (msg: ConsumeMessage | null) => {
-      if (msg) {
-        const data = JSON.parse(msg.content.toString());
-        await processAccessRequest(data);
-        channel.ack(msg);
-      }
-    });
+// Utility function to check if a string is valid JSON
+const isJSON = (str: string): boolean => {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (error) {
+    return false;
   }
+};
 
-  wss.on('connection', (ws: WebSocket) => {
-    ws.on('message', async (message: string) => {
-      const data = JSON.parse(message);
+// Function to set up RabbitMQ consumer
+const setupRabbitMQConsumer = async () => {
+  try {
+    await connectRabbitMQ();
+    console.log('RabbitMQ connection established');
+
+    const channel = getChannel();
+    if (channel) {
+      channel.consume('esp32/access', async (msg: ConsumeMessage | null) => {
+        if (msg) {
+          const messageContent = msg.content.toString();
+          console.log('Received message:', messageContent);
+
+          if (isJSON(messageContent)) {
+            const data = JSON.parse(messageContent);
+            try {
+              await processAccessRequest(data);
+            } catch (error) {
+              console.error('Error processing access request:', error);
+            }
+          } else {
+            console.log('Received message is not valid JSON:', messageContent);
+          }
+          channel.ack(msg);
+        }
+      });
+    } else {
+      console.error('Failed to create RabbitMQ channel');
+    }
+  } catch (error) {
+    console.error('Failed to establish RabbitMQ connection', error);
+    setTimeout(setupRabbitMQConsumer, 5000); // Retry connection after 5 seconds
+  }
+};
+
+// Initialize RabbitMQ consumer
+setupRabbitMQConsumer();
+
+// WebSocket connection handler
+wss.on('connection', (ws: WebSocket) => {
+  ws.on('message', async (message: string) => {
+    if (!isJSON(message)) {
+      ws.send(JSON.stringify({ status: 'error', message: 'Received message is not valid JSON' }));
+      return;
+    }
+
+    try {
+      const data: { action: string; payload: any } = JSON.parse(message);
+
+      // Connect and get a new RabbitMQ channel for each message
+      await connectRabbitMQ(); // Ensure connection is established
       const channel = getChannel();
-
       if (!channel) {
         ws.send(JSON.stringify({ status: 'error', message: 'RabbitMQ channel not available' }));
         return;
       }
 
-      if (data.action === 'publishMessage') {
-        try {
-          await channel.assertQueue(data.topic, { durable: true });
-          channel.sendToQueue(data.topic, Buffer.from(data.message));
-          ws.send(JSON.stringify({ action: 'publishMessage', status: 'success' }));
-        } catch (error) {
-          const err = error as Error;
-          ws.send(JSON.stringify({ action: 'publishMessage', status: 'error', message: err.message }));
-        }
-      } else if (data.action === 'subscribeTopic') {
-        try {
-          await channel.assertQueue(data.topic, { durable: true });
-          channel.consume(data.topic, (msg: ConsumeMessage | null) => {
-            if (msg !== null) {
-              ws.send(JSON.stringify({ action: 'message', topic: data.topic, message: msg.content.toString() }));
-              channel.ack(msg);
-            }
-          });
-          ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'success' }));
-        } catch (error) {
-          const err = error as Error;
-          ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'error', message: err.message }));
-        }
-      } else if (data.action.startsWith('admin')) {
-        handleAdminMessages(message, ws);
-      } else if (data.action.startsWith('employee')) {
-        handleEmployeeMessages(message, ws);
-      } else {
-        ws.send(JSON.stringify({ status: 'error', message: 'Acción no reconocida' }));
+      switch (data.action) {
+        case 'publishMessage':
+          try {
+            await channel.assertQueue(data.payload.topic, { durable: true });
+            channel.sendToQueue(data.payload.topic, Buffer.from(data.payload.message));
+            ws.send(JSON.stringify({ action: 'publishMessage', status: 'success' }));
+          } catch (error) {
+            console.error('Error publishing message:', error);
+            ws.send(JSON.stringify({ action: 'publishMessage', status: 'error', message: 'Failed to publish message' }));
+          }
+          break;
+
+        case 'subscribeTopic':
+          try {
+            await channel.assertQueue(data.payload.topic, { durable: true });
+            channel.consume(data.payload.topic, (msg: ConsumeMessage | null) => {
+              if (msg) {
+                ws.send(JSON.stringify({ action: 'message', topic: data.payload.topic, message: msg.content.toString() }));
+                channel.ack(msg);
+              }
+            });
+            ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'success' }));
+          } catch (error) {
+            console.error('Error subscribing to topic:', error);
+            ws.send(JSON.stringify({ action: 'subscribeTopic', status: 'error', message: 'Failed to subscribe to topic' }));
+          }
+          break;
+
+        default:
+          if (data.action.startsWith('admin')) {
+            handleAdminMessages(message, ws);
+          } else if (data.action.startsWith('employee')) {
+            handleEmployeeMessages(message, ws);
+          } else {
+            ws.send(JSON.stringify({ status: 'error', message: 'Acción no reconocida' }));
+            console.log(`Unrecognized action: ${data.action}`);
+          }
+          break;
       }
-    });
+    } catch (error) {
+      console.error('Failed to process message:', error);
+      ws.send(JSON.stringify({ status: 'error', message: 'Failed to process message' }));
+    }
   });
 
-  console.log(`WebSocket corriendo en ws://localhost:${port}`);
-}).catch(error => {
-  console.error('Failed to establish RabbitMQ connection', error);
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
+
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+  });
+});
+
+// Start WebSocket server
+wss.on('listening', () => {
+  console.log(`WebSocket server running on ws://localhost:${port}`);
 });

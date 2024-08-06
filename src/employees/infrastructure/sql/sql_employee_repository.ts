@@ -93,4 +93,15 @@ export class SqlEmployeeRepository implements EmployeeRepository {
     }
     return null;
   }
+
+  async validateAccessKey(idCard: string, accessKey: string): Promise<boolean> {
+    const sql = 'SELECT * FROM employees WHERE idCard = ? AND accessKey = ?';
+    const result: any = await query(sql, [idCard, accessKey]);
+
+    if (result) {
+      const [rows] = result;
+      return Array.isArray(rows) && rows.length > 0;
+    }
+    return false;
+  }
 }

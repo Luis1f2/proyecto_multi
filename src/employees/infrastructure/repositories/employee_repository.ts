@@ -6,4 +6,5 @@ export interface EmployeeRepository {
   findByIdCard(idCard: string): Promise<Employee | null>;
   update(employee: Employee): Promise<Employee>;
   delete(employeeId: number): Promise<void>;
+  validateAccessKey(idCard: string, accessKey: string): Promise<boolean>; 
 }
